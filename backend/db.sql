@@ -39,7 +39,7 @@ CREATE TABLE questions (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
 
-CREATE TABLE results (
+CREATE TABLE IF NOT EXISTS  results (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     quiz_id BIGINT NOT NULL,
@@ -47,6 +47,7 @@ CREATE TABLE results (
     total_questions INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (username) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
 
@@ -59,3 +60,19 @@ CREATE TABLE result_answers (
     FOREIGN KEY (result_id) REFERENCES results(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
+
+USE quiz_db;
+SELECT * FROM users;
+SELECT * FROM admin;
+SELECT * FROM quizzes;
+SELECT * FROM questions;
+SELECT * FROM results;
+
+UPDATE users SET password_hash = 'nish123' WHERE email = 'nish@example.com';
+UPDATE admin SET password_hash = 'admin123' WHERE email = 'admin@example.com';
+
+INSERT INTO admin (adminname, email, password_hash)
+VALUES ('admin', 'admin@example.com', 'scrypt:32768:8:1$H9G0TMTwOjW6GC1c$223c08163948e25daa37275310414d710c240360a1ae9b9c3fcfc0decc678a225b2b618f2a34f4921814f5af32ffbf87809d2f3fd3b48dd9b9a337e633479187');
+
+ALTER TABLE users MODIFY phone_number VARCHAR(15) NOT NULL;
+
