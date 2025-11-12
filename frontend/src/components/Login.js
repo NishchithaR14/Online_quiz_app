@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; // 👈 Import Link for navigation
+import { Link, useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate(); // ✅ Initialize navigate
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post('http://127.0.0.1:5000/login', { email, password });
       setMessage(res.data.message + " (" + res.data.role + ")");
+
+      // ✅ Navigate based on role
+      if (res.data.role === "admin") {
+        navigate("/admin/dashboard"); // redirect to AdminDashboard
+      } else if (res.data.role === "user") {
+        // you can later redirect to user dashboard here
+        console.log("User login successful");
+      }
+
     } catch (err) {
       setMessage("❌ Invalid credentials");
     }

@@ -34,41 +34,121 @@ def register_user():
 
 
 @app.route('/login', methods=['POST'])
-def login_user():
+def login():
     data = request.json
     email = data.get('email')
     password = data.get('password')
 
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT * FROM users WHERE email = %s AND password_hash = %s", (email, password))
+
+    # Check in users
+    cur.execute("SELECT * FROM users WHERE email=%s AND password_hash=%s", (email, password))
     user = cur.fetchone()
+
+    # If not found, check in admin
+    if not user:
+        cur.execute("SELECT * FROM admin WHERE email=%s AND password_hash=%s", (email, password))
+        admin = cur.fetchone()
+        if admin:
+            role = 'admin'
+            result = admin
+        else:
+            role = None
+            result = None
+    else:
+        role = 'user'
+        result = user
+
     cur.close()
     conn.close()
 
-    if user:
-        return jsonify({"message": "User login successful", "user": user}), 200
+    if result:
+        return jsonify({"message": "Login successful", "role": role}), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
 
+# @app.route('/users', methods=['GET'])
+# def get_users():
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor(dictionary=True)
+#         cursor.execute("SELECT id, username, email, phone_number, Time FROM users")
+#         users = cursor.fetchall()
+#         cursor.close()
+#         conn.close()
 
-@app.route('/admin/login', methods=['POST'])
-def login_admin():
+#         return jsonify(users)
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+@app.route('/users', methods=['GET'])
+def get_users():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, username, email FROM users")
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(users)
+
+# -------------------------
+# 🧩 QUESTIONS
+# -------------------------
+
+@app.route('/question', methods=['POST'])
+def add_question():
     data = request.json
-    email = data.get('email')
-    password = data.get('password')
+    quiz_id = data.get('quiz_id')
+    question_text = data.get('question_text')
+    option_a = data.get('option_a')
+    option_b = data.get('option_b')
+    option_c = data.get('option_c')
+    option_d = data.get('option_d')
+    correct_answer = data.get('correct_answer')
 
     conn = get_db_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT * FROM admin WHERE email = %s AND password_hash = %s", (email, password))
-    admin = cur.fetchone()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_answer)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """, (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_answer))
+    conn.commit()
     cur.close()
     conn.close()
 
-    if admin:
-        return jsonify({"message": "Admin login successful", "admin": admin}), 200
-    else:
-        return jsonify({"error": "Invalid admin credentials"}), 401
+    return jsonify({"message": "Question added successfully"}), 201
+
+@app.route('/create_quiz', methods=['POST'])
+def create_quiz():
+    data = request.get_json()
+    title = data.get('title')
+    description = data.get('description')
+
+    if not title or not description:
+        return jsonify({'error': 'Missing fields'}), 400
+
+    conn = mysql.connection
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO quizzes (title, description) VALUES (%s, %s)", (title, description))
+    conn.commit()
+
+    quiz_id = cursor.lastrowid
+    cursor.close()
+
+    return jsonify({'message': 'Quiz created successfully', 'quiz_id': quiz_id})
+
+
+@app.route('/question/<int:quiz_id>', methods=['GET'])
+def get_questions(quiz_id):
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT * FROM questions WHERE quiz_id = %s", (quiz_id,))
+    questions = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify(questions)
+
 
 
 @app.route('/')
