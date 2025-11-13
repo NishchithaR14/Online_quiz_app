@@ -16,13 +16,16 @@ function CreateQuiz() {
         description,
       });
 
-      if (res.status === 200) {
+      if (res.status === 201) {
         setMessage("✅ Quiz created successfully!");
-        // Navigate to add question page with quizId
-        navigate(`/admin/add-question/${res.data.quiz_id}`);
+        // Navigate to add-question page with quiz_id
+        const quizId = res.data.quiz_id;
+        setTimeout(() => {
+          navigate(`/admin/add-question/${quizId}`);
+        }, 1000);
       }
     } catch (err) {
-      console.error("Error creating quiz:", err);
+      console.error("❌ Error creating quiz:", err);
       setMessage("❌ Failed to create quiz");
     }
   };
@@ -49,6 +52,7 @@ function CreateQuiz() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
+          placeholder="Enter quiz title"
           style={{
             display: "block",
             width: "100%",
@@ -62,6 +66,7 @@ function CreateQuiz() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
+          placeholder="Short description..."
           style={{
             display: "block",
             width: "100%",

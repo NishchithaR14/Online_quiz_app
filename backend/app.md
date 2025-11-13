@@ -30,7 +30,43 @@ def register_user():
         cur.close()
         conn.close()
 
-# ---------------------- LOGIN ----------------------
+# # ---------------------- LOGIN (USER / ADMIN) ----------------------
+# @app.route('/login', methods=['POST'])
+# def login():
+#     data = request.json
+#     email = data.get('email')
+#     password = data.get('password')
+
+#     conn = get_db_connection()
+#     cur = conn.cursor(dictionary=True)
+
+#     # Try user login
+#     cur.execute("SELECT * FROM users WHERE email=%s AND password_hash=%s", (email, password))
+#     user = cur.fetchone()
+
+#     if not user:
+#         # Try admin login
+#         cur.execute("SELECT * FROM admin WHERE email=%s AND password_hash=%s", (email, password))
+#         admin = cur.fetchone()
+#         if admin:
+#             role = 'admin'
+#             result = admin
+#         else:
+#             role = None
+#             result = None
+#     else:
+#         role = 'user'
+#         result = user
+
+#     cur.close()
+#     conn.close()
+
+#     if result:
+#         return jsonify({"message": "Login successful", "role": role}), 200
+#     else:
+#         return jsonify({"error": "Invalid credentials"}), 401
+
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -74,6 +110,7 @@ def login():
     conn.close()
     return jsonify(response), 200
 
+
 # ---------------------- FETCH ALL USERS ----------------------
 @app.route('/users', methods=['GET'])
 def get_users():
@@ -108,7 +145,6 @@ def create_quiz():
         print("❌ Quiz creation error:", e)
         return jsonify({'error': str(e)}), 500
 
-# ---------------------- ADD QUESTION ----------------------
 @app.route('/question', methods=['POST'])
 def add_question():
     data = request.json
@@ -129,9 +165,9 @@ def add_question():
     conn.commit()
     cur.close()
     conn.close()
+
     return jsonify({"message": "Question added successfully"}), 201
 
-# ---------------------- GET ALL QUIZZES ----------------------
 @app.route('/quizzes', methods=['GET'])
 def get_quizzes():
     conn = get_db_connection()
@@ -141,8 +177,8 @@ def get_quizzes():
     cur.close()
     conn.close()
     return jsonify(quizzes)
-
-# ---------------------- GET QUESTIONS FOR QUIZ ----------------------
+    
+# ---------------------- GET QUESTIONS FOR A QUIZ ----------------------
 @app.route('/question/<int:quiz_id>', methods=['GET'])
 def get_questions(quiz_id):
     conn = get_db_connection()
@@ -153,7 +189,7 @@ def get_questions(quiz_id):
     conn.close()
     return jsonify(questions)
 
-# ---------------------- UPDATE QUESTION ----------------------
+# 📝 Update a question
 @app.route('/question/<int:question_id>', methods=['PUT'])
 def update_question(question_id):
     data = request.json
@@ -174,9 +210,11 @@ def update_question(question_id):
     conn.commit()
     cur.close()
     conn.close()
+
     return jsonify({"message": "Question updated successfully"}), 200
 
-# ---------------------- DELETE QUESTION ----------------------
+
+# ❌ Delete a question
 @app.route('/question/<int:question_id>', methods=['DELETE'])
 def delete_question(question_id):
     conn = get_db_connection()
@@ -185,41 +223,27 @@ def delete_question(question_id):
     conn.commit()
     cur.close()
     conn.close()
+
     return jsonify({"message": "Question deleted successfully"}), 200
 
-# ---------------------- GET SINGLE USER (FULL INFO) ----------------------
 @app.route('/user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
-    # Fetch basic info
     cursor.execute("SELECT id, username, email, phone_number FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
-
-    if not user:
-        cursor.close()
-        conn.close()
-        return jsonify({"error": "User not found"}), 404
-
-    # Fetch quiz stats
-    cursor.execute("""
-        SELECT  
-            COUNT(DISTINCT quiz_id) AS total_quizzes,
-            COALESCE(SUM(score), 0) AS total_score
-        FROM results
-        WHERE user_id = %s
-    """, (user_id,))
-    stats = cursor.fetchone()
-
-    user["total_quizzes"] = stats["total_quizzes"]
-    user["total_score"] = stats["total_score"]
-
     cursor.close()
     conn.close()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
     return jsonify(user)
 
-# ---------------------- UPDATE USER ----------------------
+
+
+
+# ✅ Update user
 @app.route('/user/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
     data = request.get_json()
@@ -240,7 +264,7 @@ def update_user(user_id):
     return jsonify({"message": "User updated successfully"})
 
 
-# ---------------------- DELETE USER ----------------------
+# ✅ Delete user
 @app.route('/user/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     conn = get_db_connection()
@@ -251,12 +275,11 @@ def delete_user(user_id):
     conn.close()
     return jsonify({"message": "User deleted successfully"})
 
-# ---------------------- SUBMIT QUIZ ----------------------
 @app.route('/submit/<int:quiz_id>', methods=['POST'])
 def submit_quiz(quiz_id):
     data = request.json
     user_id = data.get('user_id')
-    answers = data.get('answers')
+    answers = data.get('answers')  # {"question_id": selected_option}
 
     if not user_id or not answers:
         return jsonify({"error": "Missing data"}), 400
@@ -264,15 +287,18 @@ def submit_quiz(quiz_id):
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
 
+    # Fetch questions for the quiz
     cur.execute("SELECT id, correct_option FROM questions WHERE quiz_id = %s", (quiz_id,))
     questions = cur.fetchall()
 
     score = 0
     total = len(questions)
 
+    # Insert into results table
     cur.execute("INSERT INTO results (user_id, quiz_id, total_questions) VALUES (%s, %s, %s)", (user_id, quiz_id, total))
     result_id = cur.lastrowid
 
+    # Save each answer
     for q in questions:
         qid = q['id']
         correct = q['correct_option']
@@ -285,6 +311,7 @@ def submit_quiz(quiz_id):
             VALUES (%s, %s, %s, %s)
         """, (result_id, qid, selected, is_correct))
 
+    # Update score in results table
     cur.execute("UPDATE results SET score=%s WHERE id=%s", (score, result_id))
 
     conn.commit()
@@ -292,12 +319,11 @@ def submit_quiz(quiz_id):
     conn.close()
 
     return jsonify({"score": score, "total_questions": total})
-
-# ---------------------- LEADERBOARD ----------------------
 @app.route('/leaderboard/<int:quiz_id>', methods=['GET'])
 def leaderboard(quiz_id):
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
+
     cur.execute("""
         SELECT u.username, r.score, r.total_questions
         FROM results r
@@ -306,11 +332,11 @@ def leaderboard(quiz_id):
         ORDER BY r.score DESC
         LIMIT 10
     """, (quiz_id,))
+
     leaders = cur.fetchall()
     cur.close()
     conn.close()
     return jsonify(leaders)
-
 
 
 # ---------------------- ROOT CHECK ----------------------

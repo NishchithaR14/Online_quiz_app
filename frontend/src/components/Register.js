@@ -12,6 +12,7 @@ function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setMessage('');
     try {
       const res = await axios.post('http://127.0.0.1:5000/register', {
         username,
@@ -19,90 +20,138 @@ function Register() {
         phone_number,
         password,
       });
-      setMessage(res.data.message || "✅ Registered successfully!");
+      setMessage(res.data.message || "Registered successfully!");
     } catch (err) {
-      setMessage("❌ Registration failed");
+      setMessage("Registration failed. Try again.");
     }
   };
 
   return (
-    <div style={{ width: "400px", margin: "100px auto", textAlign: "center" }}>
-      <h2>User Registration</h2>
-
-      <form onSubmit={handleRegister}>
-        <input
-          type="text"
-          placeholder="Username"
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          style={{ display: "block", margin: "10px auto", padding: "8px", width: "80%" }}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ display: "block", margin: "10px auto", padding: "8px", width: "80%" }}
-        />
-        <input
-          type="text"
-          placeholder="Phone Number"
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          style={{ display: "block", margin: "10px auto", padding: "8px", width: "80%" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ display: "block", margin: "10px auto", padding: "8px", width: "80%" }}
-        />
-
-        {/* 🔹 Two buttons side by side */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            width: "80%",
-            margin: "15px auto",
-          }}
-        >
-          <button
-            type="submit"
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100vh",
+      fontFamily: "'Poppins', sans-serif"
+    }}>
+      <div style={{
+        width: "380px",
+        background: "#fff",
+        padding: "30px",
+        borderRadius: "12px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
+      }}>
+        <h2 style={{ textAlign: "center", marginBottom: "25px", color: "#333" }}>Register</h2>
+        <form onSubmit={handleRegister}>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
             style={{
-              flex: 1,
-              padding: "8px 16px",
-              marginRight: "10px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
+              width: "100%",
+              padding: "12px 15px",
+              marginBottom: "15px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+              outline: "none"
             }}
-          >
-            Register
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/')}
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             style={{
-              flex: 1,
-              padding: "8px 16px",
-              backgroundColor: "#2196F3",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
+              width: "100%",
+              padding: "12px 15px",
+              marginBottom: "15px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+              outline: "none"
             }}
-          >
-            Login
-          </button>
-        </div>
-      </form>
+          />
+          <input
+            type="text"
+            placeholder="Phone Number"
+            value={phone_number}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+            style={{
+              width: "100%",
+              padding: "12px 15px",
+              marginBottom: "15px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+              outline: "none"
+            }}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{
+              width: "100%",
+              padding: "12px 15px",
+              marginBottom: "20px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+              outline: "none"
+            }}
+          />
 
-      <p style={{ marginTop: "10px" }}>{message}</p>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="submit"
+              style={{
+                flex: 1,
+                padding: "12px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#4CAF50",
+                color: "#fff",
+                fontSize: "16px",
+                cursor: "pointer",
+                transition: "0.3s"
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = "#45a049"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "#4CAF50"}
+            >
+              Register
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              style={{
+                flex: 1,
+                padding: "12px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#2196F3",
+                color: "#fff",
+                fontSize: "16px",
+                cursor: "pointer",
+                transition: "0.3s"
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = "#1976D2"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "#2196F3"}
+            >
+              Login
+            </button>
+          </div>
+        </form>
+
+        {message && <p style={{ color: "red", textAlign: "center", marginTop: "15px" }}>{message}</p>}
+      </div>
     </div>
   );
 }
